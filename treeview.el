@@ -202,7 +202,7 @@ This is the case if, and only if, NODE's state is `folded-unread'."
 
 (defun treeview-node-folded-p (node)
   "Return non-nil if NODE is folded.
-This is the case is and only if NODES's state is `folded-unred' or `folded-read'."
+This is the case if and only if NODES's state is `folded-unread' or `folded-read'."
   (memq (treeview-get-node-state node) '(folded-unread folded-read)))
 
 (defun treeview-node-expanded-p (node)
@@ -273,6 +273,13 @@ Default implementation of functions that provide optional data, e.g.,
 `treeview-get-control-face-function'.  The argument _NODE is ignored."
   nil)
 
+(defun treeview-do-nothing (_node)
+  "Do nothing.
+Default implementation of functions that may be used to perform additional
+actions on certain occasions, e.g., `treeview-after-node-expanded-function'.
+Always returns t."
+  t)
+
 (defun treeview--not-nil-or-empty-string-p (str)
   "Return non-nil if STR is neither nil nor the empty string."
   (and str (not (string-equal str ""))))
@@ -282,6 +289,14 @@ Default implementation of functions that provide optional data, e.g.,
 Called with one argument, the node.  For example, if the nodes represent
 directories, this function could re-read the directory to update the children.
 The function should not redisplay the node, this is done automatically.")
+
+(defvar treeview-after-node-expanded-function 'treeview-do-nothing
+  "Function to perform additional actions after a node has been expanded.
+Called with one argument, the node.")
+
+(defvar treeview-after-node-folded-function 'treeview-do-nothing
+  "Function to perform additional actions after a node has been expanded.
+Called with one argument, the node.")
 
 (make-variable-buffer-local 'treeview-update-node-children-function)
 
@@ -705,6 +720,51 @@ The first one does the rendering, the latter one fixes the
     (treeview-set-node-end-after-display node)
     (setq buffer-read-only read-only-p) ))
 
+(defun treeview-insert-node-after (node anchor)
+  "Insert NODE after ANCHOR.
+ANCHOR must be a cons cell of the list of children of a node.  NODE is inserted
+after this cons cell.  NODE is also displayed if the parent is expanded."
+  (let* ( (read-only-p buffer-read-only)
+          (anchor-node (car anchor))
+          (parent (treeview-get-node-parent anchor-node))
+          (new-cons (cons node nil)) )
+    (setcdr new-cons (cdr anchor))
+    (setcdr anchor new-cons)
+    (treeview-set-node-parent node parent)
+    (when (treeview-node-expanded-p parent)
+      (setq buffer-read-only nil)
+      (goto-char (treeview-get-node-prop anchor-node 'end))
+      (end-of-line)
+      (newline)
+      (treeview-display-node-internal node nil)
+      (treeview-set-node-end-after-display node)
+      (setq buffer-read-only read-only-p))))
+
+(defun treeview-add-child-at-front (parent node)
+  "Insert NODE at the beginning of the children of PARENT.
+Thus, NODE becomes the new first child of PARENT. NODE is also displayed if
+PARENT is expanded.."
+  (let ( (read-only-p buffer-read-only)
+         (children (treeview-get-node-children parent)) )
+    (setq children (cons node children))
+    (treeview-set-node-parent node parent)
+    (treeview-set-node-children parent children)
+    (when (treeview-node-expanded-p parent)
+      (setq buffer-read-only nil)
+      (goto-char (treeview-get-node-prop parent 'start))
+      (end-of-line)
+      (newline)
+      (treeview-display-node-internal node nil)
+      (treeview-set-node-end-after-display node)
+      (setq buffer-read-only read-only-p))))
+
+(defun treeview-add-child (parent node compare-function)
+  (let ( (cursor (treeview-get-node-children parent)) anchor )
+    (while (and cursor (funcall compare-function node (car cursor)))
+      (setq anchor cursor
+            cursor (cdr cursor)))
+    (if anchor (treeview-insert-node-after node anchor) (treeview-add-child-at-front parent node))))
+
 (defun treeview--recursivlely-remove-overlays (node)
   "Remove all overlays of NODE and its descendents."
   (let ( (overlay-prop-keys '(indent-overlay control-overlay icon-overlay label-overlay node-line-overlay)) )
@@ -720,45 +780,63 @@ The first one does the rendering, the latter one fixes the
         (treeview--recursivlely-remove-overlays (car children))
         (setq children (cdr children)) ))) )
 
-(defun treeview-erase-node (node)
-  "Remove NODE and all its descendents from the display in the buffer.
+(defun treeview-undisplay-node (node &optional leave-no-gap)
+  "Remove NODE and all its descendents from the display in the buffer.  If
+LEAVE-NO-GAP is non-nil, the node is removed without leaving a gap between the
+previuos and following nodes. Otherwise, an empty line remains.
 
 The 'start' and 'end' properties of NODE are set to nil.  Except this, the
 internal representation of the tree is not altered.  Neither NODE or its
 descendents are removed from the children of their respective parents.
 
-The main purpose of this function is to implement the
-`treeview-redisplay-node' function."
+The main purpose of this function is to implement the functions
+`treeview-redisplay-node' and `treeview-remove-node'."
   (let* ( (read-only-p buffer-read-only)
           (start (treeview-get-node-prop node 'start))
           (end (treeview-get-node-prop node 'end)) )
     (treeview--recursivlely-remove-overlays node)
     (setq buffer-read-only nil)
+    (when leave-no-gap
+      ;; Move end position to end of previous line (if any) to remove node completely
+      (save-excursion
+        (goto-char start)
+        (when (equal (forward-line -1) 0)
+          (end-of-line)
+          (setq start (point)))))
     (delete-region start end)
     (treeview-set-node-prop node 'start nil)
     (treeview-set-node-prop node 'end nil)
     (setq buffer-read-only read-only-p)))
 
+(defun treeview-remove-node (node)
+  "Remove NODE from the tree.
+NODE is also erased from the display."
+  (let ( (parent (treeview-get-node-parent node) ) )
+    (if parent (delq node (treeview-get-node-children parent)))
+    (treeview-undisplay-node node t)))
+
 (defun treeview-redisplay-node (node)
   "Redisplay NODE.
 
-NODE is erased by `treeview-erase-node' and displayed again by
+NODE is erased by `treeview-undisplay-node' and displayed again by
 `treeview-display-node'.  This function can be used to update the display of a
 node after it has changed."
   (let ( (start-marker (treeview-get-node-prop node 'start)) )
-    (treeview-erase-node node)
+    (treeview-undisplay-node node)
     (goto-char start-marker)
     (treeview-display-node node)))
 
 (defun treeview-expand-node (node)
   "Expands NODE."
   (treeview-set-node-state node 'expanded)
-  (funcall treeview-update-node-children-function node))
+  (funcall treeview-update-node-children-function node)
+  (funcall treeview-after-node-expanded-function node))
 
 (defun treeview-fold-node (node)
   "Folds NODE."
   (treeview-set-node-state node 'folded-read)
-  (funcall treeview-update-node-children-function node))
+  (funcall treeview-update-node-children-function node)
+  (funcall treeview-after-node-folded-function node))
 
 (defun treeview-update-node (node)
   "Update NODE.
@@ -767,7 +845,7 @@ If NODE is not folded, the following is done: First, the function calls
 `treeview-update-node-children-function' for NODE.  Then, the function
 calls itself for all children of NODE.
 
-If NODE is not folded, does nothing."
+If NODE is folded, does nothing."
   (unless (treeview-node-folded-p node)
     (funcall treeview-update-node-children-function node)
     (let ( (children (treeview-get-node-children node)) )
