@@ -743,7 +743,7 @@ after this cons cell.  NODE is also displayed if the parent is expanded."
 (defun treeview-add-child-at-front (parent node)
   "Insert NODE at the beginning of the children of PARENT.
 Thus, NODE becomes the new first child of PARENT. NODE is also displayed if
-PARENT is expanded.."
+PARENT is expanded."
   (let ( (read-only-p buffer-read-only)
          (children (treeview-get-node-children parent)) )
     (setq children (cons node children))
@@ -890,6 +890,13 @@ See also `treeview-toggle-node-state'."
           (end (overlay-end overlay))
           (offset (/ (- end start) 2)) )
     (+ start offset)))
+
+(defun treeview-call-for-node-at-point (action-function)
+  "Call ACTION-FUNCTION with the node at point as argument.
+ACTION-FUNCTION is the symbol of the function.  If there is no node at point,
+does nothing."
+  (let ( (node (treeview-get-node-at-pos (point))) )
+    (when node (funcall action-function node))))
 
 (defvar treeview-suggest-point-pos-in-control-function 'treeview-get-overlay-center
   "Function to suggest an appropriate position for the point in a node control.
