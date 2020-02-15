@@ -714,49 +714,43 @@ The main implementation is outsourced and split into two other functions:
 `treeview-display-node-internal' and `treeview-set-node-end-after-display'.
 The first one does the rendering, the latter one fixes the
 `marker-insertion-type's of the end markers of the rendered nodes."
-  (let ( (read-only-p buffer-read-only) )
-    (setq buffer-read-only nil)
+  (let ( (buffer-read-only nil) )
     (treeview-display-node-internal node append-newline-p)
-    (treeview-set-node-end-after-display node)
-    (setq buffer-read-only read-only-p) ))
+    (treeview-set-node-end-after-display node)))
 
 (defun treeview-insert-node-after (node anchor)
   "Insert NODE after ANCHOR.
 ANCHOR must be a cons cell of the list of children of a node.  NODE is inserted
 after this cons cell.  NODE is also displayed if the parent is expanded."
-  (let* ( (read-only-p buffer-read-only)
-          (anchor-node (car anchor))
+  (let* ( (anchor-node (car anchor))
           (parent (treeview-get-node-parent anchor-node))
           (new-cons (cons node nil)) )
     (setcdr new-cons (cdr anchor))
     (setcdr anchor new-cons)
     (treeview-set-node-parent node parent)
     (when (treeview-node-expanded-p parent)
-      (setq buffer-read-only nil)
-      (goto-char (treeview-get-node-prop anchor-node 'end))
-      (end-of-line)
-      (newline)
-      (treeview-display-node-internal node nil)
-      (treeview-set-node-end-after-display node)
-      (setq buffer-read-only read-only-p))))
+      (let ( (buffer-read-only nil) )
+        (goto-char (treeview-get-node-prop anchor-node 'end))
+        (end-of-line)
+        (newline)
+        (treeview-display-node-internal node nil)
+        (treeview-set-node-end-after-display node) )) ))
 
 (defun treeview-add-child-at-front (parent node)
   "Insert NODE at the beginning of the children of PARENT.
 Thus, NODE becomes the new first child of PARENT. NODE is also displayed if
 PARENT is expanded."
-  (let ( (read-only-p buffer-read-only)
-         (children (treeview-get-node-children parent)) )
+  (let ( (children (treeview-get-node-children parent)) )
     (setq children (cons node children))
     (treeview-set-node-parent node parent)
     (treeview-set-node-children parent children)
     (when (treeview-node-expanded-p parent)
-      (setq buffer-read-only nil)
-      (goto-char (treeview-get-node-prop parent 'start))
-      (end-of-line)
-      (newline)
-      (treeview-display-node-internal node nil)
-      (treeview-set-node-end-after-display node)
-      (setq buffer-read-only read-only-p))))
+      (let ( (buffer-read-only nil) )
+        (goto-char (treeview-get-node-prop parent 'start))
+        (end-of-line)
+        (newline)
+        (treeview-display-node-internal node nil)
+        (treeview-set-node-end-after-display node) )) ))
 
 (defun treeview-add-child (parent node compare-function)
   (let ( (cursor (treeview-get-node-children parent)) anchor )
@@ -791,11 +785,10 @@ descendents are removed from the children of their respective parents.
 
 The main purpose of this function is to implement the functions
 `treeview-redisplay-node' and `treeview-remove-node'."
-  (let* ( (read-only-p buffer-read-only)
-          (start (treeview-get-node-prop node 'start))
-          (end (treeview-get-node-prop node 'end)) )
+  (let* ( (start (treeview-get-node-prop node 'start))
+          (end (treeview-get-node-prop node 'end))
+          (buffer-read-only nil) )
     (treeview--recursivlely-remove-overlays node)
-    (setq buffer-read-only nil)
     (when leave-no-gap
       ;; Move end position to end of previous line (if any) to remove node completely
       (save-excursion
@@ -805,8 +798,7 @@ The main purpose of this function is to implement the functions
           (setq start (point)))))
     (delete-region start end)
     (treeview-set-node-prop node 'start nil)
-    (treeview-set-node-prop node 'end nil)
-    (setq buffer-read-only read-only-p)))
+    (treeview-set-node-prop node 'end nil)))
 
 (defun treeview-remove-node (node)
   "Remove NODE from the tree.
