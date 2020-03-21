@@ -258,14 +258,25 @@ node has no children or is unread (i.e., its state is 'folded-unred'.")
 Calls the buffer local function `treeview-node-leaf-p-function' with one argument, NODE."
   (funcall treeview-node-leaf-p-function node))
 
-(defun treeview-put (&rest args)
-  "Insert ARGS at point.
-Each element of ARGS may be a string, a character, nil, or a list.  If nil, the
-element is ignored.  If a list, the function recursively calls itself."
-  (while args
-    (let ( (arg (car args)) )
-      (if arg (if (listp arg) (apply 'treeview-put arg) (insert arg)))
-      (setq args (cdr args)) )))
+(defun treeview-put (&rest objects)
+  "Insert OBJECTS at point.
+Each element of OBJECTS may be a string, a character, an image, nil, or a list.
+If nil, the element is ignored.  If a list, the function recursively calls
+itself."
+  (while objects
+    (let ( (object (car objects)) )
+      (when object
+        (if (listp object)
+            (if (eq (car object) 'image)
+                ;; It's an image
+                (let ( (start (point)) )
+                  (insert " ")
+                  (put-text-property start (point) 'display image))
+              ;; It's a list of objects
+              (apply 'treeview-put object))
+          ;; It's a string or character
+          (insert object) ))
+      (setq objects (cdr objects)) )))
 
 (defun treeview-return-nil (_node)
   "Return nil.
@@ -339,7 +350,7 @@ The default implementation is `treeview-return-nil'.")
 (defvar treeview-get-icon-function 'treeview-return-nil
   "Function to create and return the icon of a node.
 Called with one argument, the node.  Should return a string or nil.  In the
-latter case the node  does not get an icon.
+latter case the node does not get an icon.
 
 The default implementation is `treeview-return-nil'.")
 
