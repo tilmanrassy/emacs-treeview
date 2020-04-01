@@ -701,7 +701,7 @@ This is an auxiliary function used in `treeview-display-node'."
     (treeview-set-node-prop node 'control-overlay control-overlay)
     (treeview-set-node-prop node 'icon-overlay icon-overlay)
     (treeview-set-node-prop node 'label-overlay label-overlay)
-    (treeview-set-node-prop node 'node-line-overlay node-line-overlay) ))
+    (treeview-set-node-prop node 'node-line-overlay node-line-overlay) ) )
 
 (defun treeview-set-node-end-after-display (node)
   "Set the insertion type of the end marker of NODE and its descendants to t.
@@ -811,11 +811,15 @@ The main purpose of this function is to implement the functions
     (treeview-set-node-prop node 'start nil)
     (treeview-set-node-prop node 'end nil)))
 
+(defun treeview-remove-child (node child)
+  "Remove CHILD from the children of NODE."
+  (treeview-set-node-children node (delq child (treeview-get-node-children node))))
+
 (defun treeview-remove-node (node)
   "Remove NODE from the tree.
 NODE is also erased from the display."
   (let ( (parent (treeview-get-node-parent node) ) )
-    (if parent (delq node (treeview-get-node-children parent)))
+    (when parent (treeview-remove-child parent node))
     (treeview-undisplay-node node t)))
 
 (defun treeview-redisplay-node (node)
