@@ -231,6 +231,15 @@ If NODE has no parent, return nil."
   (let ( (parent (treeview-get-node-parent node)) )
     (if parent (treeview-get-node-children parent) )))
 
+(defun treeview-get-next-sibling (node)
+  "Return the next sibling of NODE.
+If NODE does not have a next sibling, returns nil."
+  (let ( (siblings (treeview-get-parent-children node)) )
+    (when siblings
+      (while (not (eq (car siblings) node)) (setq siblings (cdr siblings)))
+      (setq siblings (cdr siblings))
+      (when siblings (car siblings)))))
+
 (defun treeview-last-child-p (node)
   "Return non-nil of NODE is the last child, otherwise nil."
   (let ( (parent (treeview-get-node-parent node)) )
@@ -271,7 +280,7 @@ itself."
                 ;; It's an image
                 (let ( (start (point)) )
                   (insert " ")
-                  (put-text-property start (point) 'display image))
+                  (put-text-property start (point) 'display object))
               ;; It's a list of objects
               (apply 'treeview-put object))
           ;; It's a string or character
@@ -291,7 +300,7 @@ actions on certain occasions, e.g., `treeview-after-node-expanded-function'.
 Always returns t."
   t)
 
-(defun treeview--not-nil-or-empty-string-p (str)
+(defun treeview-not-nil-or-empty-string-p (str)
   "Return non-nil if STR is neither nil nor the empty string."
   (and str (not (string-equal str ""))))
 
@@ -530,7 +539,9 @@ treeview buffer.  It should be called only if this is guaranteed."
 (defun treeview-find-node-in-current-line ()
   "Find and return the node in the current line.
 If there is no node in the current line, return nil."
-  (treeview-get-node-at-pos (point)))
+  (save-excursion
+    (move-to-column 0)
+    (treeview-get-node-at-pos (point))))
 
 (defun treeview-find-next-node ()
   "Find and return the next node in the lines following the current line.
@@ -749,7 +760,7 @@ after this cons cell.  NODE is also displayed if the parent is expanded."
 
 (defun treeview-add-child-at-front (parent node)
   "Insert NODE at the beginning of the children of PARENT.
-Thus, NODE becomes the new first child of PARENT. NODE is also displayed if
+Thus, NODE becomes the new first child of PARENT.  NODE is also displayed if
 PARENT is expanded."
   (let ( (children (treeview-get-node-children parent)) )
     (setq children (cons node children))
@@ -764,13 +775,19 @@ PARENT is expanded."
         (treeview-set-node-end-after-display node) )) ))
 
 (defun treeview-add-child (parent node compare-function)
+  "Add NODE to the children of PARENT.
+NODE is inserted at a position in accordance with the ordering of the children
+of PARENT.  It is assumed that the children of PARENT are ordered according to
+COMPARE-FUNCTION.  The latter should be a function accepting two arguments, and
+return non-nil if the first argument is less that the second with respect to the
+ ordering."
   (let ( (cursor (treeview-get-node-children parent)) anchor )
     (while (and cursor (funcall compare-function node (car cursor)))
       (setq anchor cursor
             cursor (cdr cursor)))
     (if anchor (treeview-insert-node-after node anchor) (treeview-add-child-at-front parent node))))
 
-(defun treeview--recursivlely-remove-overlays (node)
+(defun treeview-recursively-remove-overlays (node)
   "Remove all overlays of NODE and its descendents."
   (let ( (overlay-prop-keys '(indent-overlay control-overlay icon-overlay label-overlay node-line-overlay)) )
     (while overlay-prop-keys
@@ -782,13 +799,13 @@ PARENT is expanded."
   (let ( (children (treeview-get-node-children node)) )
     (while children
       (progn
-        (treeview--recursivlely-remove-overlays (car children))
+        (treeview-recursively-remove-overlays (car children))
         (setq children (cdr children)) ))) )
 
 (defun treeview-undisplay-node (node &optional leave-no-gap)
-  "Remove NODE and all its descendents from the display in the buffer.  If
-LEAVE-NO-GAP is non-nil, the node is removed without leaving a gap between the
-previuos and following nodes. Otherwise, an empty line remains.
+  "Remove NODE and all its descendents from the display in the buffer.
+If LEAVE-NO-GAP is non-nil, the node is removed without leaving a gap between
+the previuos and following nodes.  Otherwise, an empty line remains.
 
 The 'start' and 'end' properties of NODE are set to nil.  Except this, the
 internal representation of the tree is not altered.  Neither NODE or its
@@ -799,7 +816,7 @@ The main purpose of this function is to implement the functions
   (let* ( (start (treeview-get-node-prop node 'start))
           (end (treeview-get-node-prop node 'end))
           (buffer-read-only nil) )
-    (treeview--recursivlely-remove-overlays node)
+    (treeview-recursively-remove-overlays node)
     (when leave-no-gap
       ;; Move end position to end of previous line (if any) to remove node completely
       (save-excursion
@@ -817,10 +834,11 @@ The main purpose of this function is to implement the functions
 
 (defun treeview-remove-node (node)
   "Remove NODE from the tree.
-NODE is also erased from the display."
+NODE is also erased from the display if its parent is expanded.  It is also
+erased if it has no parent, thus, if it is the root node."
   (let ( (parent (treeview-get-node-parent node) ) )
     (when parent (treeview-remove-child parent node))
-    (treeview-undisplay-node node t)))
+    (when (or (not parent) (treeview-node-expanded-p parent)) (treeview-undisplay-node node t))))
 
 (defun treeview-redisplay-node (node)
   "Redisplay NODE.
@@ -940,6 +958,45 @@ argument.  Otherwise, point is placed at the beginning of the label."
   (forward-line -1)
   (let ( (node (treeview-get-node-at-point)) )
     (if node (treeview-place-point-in-node node))))
+
+(defun treeview-goto-parent ()
+  "Move the point to the parent of node at point.
+If there is no node at point, or if the node has no parent, does nothing."
+  (interactive)
+  (let ( (node (treeview-find-node-in-current-line)) )
+    (when node
+      (let ( (parent (treeview-get-node-parent node)) )
+        (when parent (treeview-place-point-in-node parent))))))
+
+(defun treeview-goto-first-sibling ()
+  "Move the point to the first sibling of the node at point.
+If there is no node at point, does nothing."
+  (interactive)
+  (let ( (node (treeview-find-node-in-current-line)) )
+    (when node
+      (let ( (siblings (treeview-get-parent-children node)) )
+        (treeview-place-point-in-node (if siblings (car siblings) node)) ))) )
+
+(defun treeview-goto-last-sibling ()
+  "Move the point to the first sibling of the node at point.
+If there is no node at point, does nothing."
+  (interactive)
+  (let ( (node (treeview-find-node-in-current-line)) )
+    (when node
+      (let ( (siblings (treeview-get-parent-children node)) )
+        (treeview-place-point-in-node (if siblings (car (last siblings)) node)) ))) )
+
+(defun treeview-goto-parents-next-sibling ()
+  "Move the point to the next sibling of the parent of the node at point.
+If there is no node at point, or if the node has no parent, or if the parent
+has no next sibling, does nothing."
+  (interactive)
+  (let ( (node (treeview-find-node-in-current-line)) )
+    (when node
+      (let ( (parent (treeview-get-node-parent node)) )
+        (when parent
+          (let ( (sibling (treeview-get-next-sibling parent)) )
+            (when sibling (treeview-place-point-in-node sibling))))))))
 
 (defun treeview-make-keymap (key-table)
   "Create and return a keymap from KEY-TABLE.
