@@ -1,9 +1,9 @@
 ;;; treeview.el --- A generic tree navigation library -*- lexical-binding: t -*-
 
-;; Copyright (C) 2018 Tilman Rassy
+;; Copyright (C) 2018 - 2020 Tilman Rassy
 
 ;; Author: Tilman Rassy <tilman.rassy@googlemail.com>
-;; URL: TODO
+;; URL: https://github.com/tilmanrassy/emacs-treeview
 ;; Package-Version: 1.0.0
 ;; Keywords: lisp, tools, internal, convenience
 
