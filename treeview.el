@@ -104,8 +104,9 @@
 ;;
 ;;   treeview-node-leaf-p-function
 ;;   treeview-update-node-children-function
+;;   treeview-after-node-expanded-function
+;;   treeview-after-node-folded-function
 ;;   treeview-get-indent-function
-;;   treeview-get-indent-face-function
 ;;   treeview-get-control-function
 ;;   treeview-get-control-margin-left-function
 ;;   treeview-get-control-margin-right-function
@@ -115,6 +116,7 @@
 ;;   treeview-get-label-function
 ;;   treeview-get-label-margin-left-function
 ;;   treeview-get-control-keymap-function
+;;   treeview-get-indent-face-function
 ;;   treeview-get-control-face-function
 ;;   treeview-get-control-mouse-face-function
 ;;   treeview-get-label-keymap-function
