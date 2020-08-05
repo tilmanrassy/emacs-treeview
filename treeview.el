@@ -269,6 +269,13 @@ node has no children or is unread (i.e., its state is 'folded-unred'.")
 Calls the buffer local function `treeview-node-leaf-p-function' with one argument, NODE."
   (funcall treeview-node-leaf-p-function node))
 
+(defun treeview-node-not-hidden-p (node)
+  "Return non-nil if NODE is not hidden, otherwise nil.
+A node is not hidden if all its ancestors are expanded.  A node with no
+ancestors (thus, the root node) is also not hidden."
+  (let ( (parent (treeview-get-node-parent node)) )
+    (if parent (and (treeview-node-expanded-p parent) (treeview-node-not-hidden-p parent)) t)))
+
 (defun treeview-put (&rest objects)
   "Insert OBJECTS at point.
 Each element of OBJECTS may be a string, a character, an image, nil, or a list.
@@ -745,14 +752,14 @@ The first one does the rendering, the latter one fixes the
 (defun treeview-insert-node-after (node anchor)
   "Insert NODE after ANCHOR.
 ANCHOR must be a cons cell of the list of children of a node.  NODE is inserted
-after this cons cell.  NODE is also displayed if the parent is expanded."
+after this cons cell.  NODE is also displayed if the parent is not hidden."
   (let* ( (anchor-node (car anchor))
           (parent (treeview-get-node-parent anchor-node))
           (new-cons (cons node nil)) )
     (setcdr new-cons (cdr anchor))
     (setcdr anchor new-cons)
     (treeview-set-node-parent node parent)
-    (when (treeview-node-expanded-p parent)
+    (when (treeview-node-not-hidden-p parent)
       (let ( (buffer-read-only nil) )
         (goto-char (treeview-get-node-prop anchor-node 'end))
         (end-of-line)
@@ -763,12 +770,12 @@ after this cons cell.  NODE is also displayed if the parent is expanded."
 (defun treeview-add-child-at-front (parent node)
   "Insert NODE at the beginning of the children of PARENT.
 Thus, NODE becomes the new first child of PARENT.  NODE is also displayed if
-PARENT is expanded."
+PARENT is not hidden."
   (let ( (children (treeview-get-node-children parent)) )
     (setq children (cons node children))
     (treeview-set-node-parent node parent)
     (treeview-set-node-children parent children)
-    (when (treeview-node-expanded-p parent)
+    (when (treeview-node-not-hidden-p parent)
       (let ( (buffer-read-only nil) )
         (goto-char (treeview-get-node-prop parent 'start))
         (end-of-line)
@@ -836,11 +843,11 @@ The main purpose of this function is to implement the functions
 
 (defun treeview-remove-node (node)
   "Remove NODE from the tree.
-NODE is also erased from the display if its parent is expanded.  It is also
+NODE is also erased from the display if its parent is not hidden.  It is also
 erased if it has no parent, thus, if it is the root node."
   (let ( (parent (treeview-get-node-parent node) ) )
     (when parent (treeview-remove-child parent node))
-    (when (or (not parent) (treeview-node-expanded-p parent)) (treeview-undisplay-node node t))))
+    (when (or (not parent) (treeview-node-not-hidden-p parent)) (treeview-undisplay-node node t))))
 
 (defun treeview-redisplay-node (node)
   "Redisplay NODE.
