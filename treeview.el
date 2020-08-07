@@ -274,7 +274,13 @@ Calls the buffer local function `treeview-node-leaf-p-function' with one argumen
 A node is not hidden if all its ancestors are expanded.  A node with no
 ancestors (thus, the root node) is also not hidden."
   (let ( (parent (treeview-get-node-parent node)) )
-    (if parent (and (treeview-node-expanded-p parent) (treeview-node-not-hidden-p parent)) t)))
+    (or (not parent) (and (treeview-node-expanded-p parent) (treeview-node-not-hidden-p parent)))))
+
+(defun treeview-node-expanded-and-not-hidden-p (node)
+  "Return non-nil if NODE is expanded and not hidden, otherwise nil.
+A node is not hidden if all its ancestors are expanded.  A node with no
+ancestors (thus, the root node) is also not hidden."
+  (and (treeview-node-expanded-p node) (treeview-node-not-hidden-p node)))
 
 (defun treeview-put (&rest objects)
   "Insert OBJECTS at point.
@@ -759,7 +765,7 @@ after this cons cell.  NODE is also displayed if the parent is not hidden."
     (setcdr new-cons (cdr anchor))
     (setcdr anchor new-cons)
     (treeview-set-node-parent node parent)
-    (when (treeview-node-not-hidden-p parent)
+    (when (treeview-node-expanded-and-not-hidden-p parent)
       (let ( (buffer-read-only nil) )
         (goto-char (treeview-get-node-prop anchor-node 'end))
         (end-of-line)
@@ -775,7 +781,7 @@ PARENT is not hidden."
     (setq children (cons node children))
     (treeview-set-node-parent node parent)
     (treeview-set-node-children parent children)
-    (when (treeview-node-not-hidden-p parent)
+    (when (treeview-node-expanded-and-not-hidden-p parent)
       (let ( (buffer-read-only nil) )
         (goto-char (treeview-get-node-prop parent 'start))
         (end-of-line)
@@ -847,7 +853,7 @@ NODE is also erased from the display if its parent is not hidden.  It is also
 erased if it has no parent, thus, if it is the root node."
   (let ( (parent (treeview-get-node-parent node) ) )
     (when parent (treeview-remove-child parent node))
-    (when (or (not parent) (treeview-node-not-hidden-p parent)) (treeview-undisplay-node node t))))
+    (when (treeview-node-not-hidden-p node) (treeview-undisplay-node node t))))
 
 (defun treeview-redisplay-node (node)
   "Redisplay NODE.
