@@ -653,7 +653,7 @@ is done."
   (if (not pos) (setq pos (treeview-get-node-prop node 'end)))
   (if pos (treeview-set-node-prop node 'end (copy-marker pos type))))
 
-(defun treeview-display-node-internal (node &optional append-newline-p)
+(defun treeview-render-node (node &optional append-newline-p)
   "Display NODE, i.e., render it in the current buffer.
 The node is placed at the current line.  All descendent nodes are rendered by
 calling this function recursively.  If APPEND-NEWLINE-P is non-nil, a newline
@@ -720,7 +720,7 @@ This is an auxiliary function used in `treeview-display-node'."
       (let ( (children (treeview-get-node-children node)) )
         (if children (newline))
         (while children
-          (treeview-display-node-internal (car children) (setq children (cdr children)))) ))
+          (treeview-render-node (car children) (setq children (cdr children)))) ))
     (treeview-set-node-end node nil nil)
     (if append-newline-p (newline))
     (treeview-set-node-prop node 'indent-overlay indent-overlay)
@@ -748,11 +748,11 @@ well unless they are folded.  If APPEND-NEWLINE-P is non-nil, a newline is
 appended to the node.
 
 The main implementation is outsourced and split into two other functions:
-`treeview-display-node-internal' and `treeview-set-node-end-after-display'.
+`treeview-render-node' and `treeview-set-node-end-after-display'.
 The first one does the rendering, the latter one fixes the
 `marker-insertion-type's of the end markers of the rendered nodes."
   (let ( (buffer-read-only nil) )
-    (treeview-display-node-internal node append-newline-p)
+    (treeview-render-node node append-newline-p)
     (treeview-set-node-end-after-display node)))
 
 (defun treeview-insert-node-after (node anchor)
@@ -770,7 +770,7 @@ after this cons cell.  NODE is also displayed if the parent is not hidden."
         (goto-char (treeview-get-node-prop anchor-node 'end))
         (end-of-line)
         (newline)
-        (treeview-display-node-internal node nil)
+        (treeview-render-node node nil)
         (treeview-set-node-end-after-display node) )) ))
 
 (defun treeview-add-child-at-front (parent node)
@@ -786,7 +786,7 @@ PARENT is not hidden."
         (goto-char (treeview-get-node-prop parent 'start))
         (end-of-line)
         (newline)
-        (treeview-display-node-internal node nil)
+        (treeview-render-node node nil)
         (treeview-set-node-end-after-display node) )) ))
 
 (defun treeview-add-child (parent node compare-function)
