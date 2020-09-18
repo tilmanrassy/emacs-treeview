@@ -5,6 +5,7 @@
 ;; Author: Tilman Rassy <tilman.rassy@googlemail.com>
 ;; URL: https://github.com/tilmanrassy/emacs-treeview
 ;; Version: 1.0.0
+;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: lisp, tools, internal, convenience
 
 ;; This program is free software; you can redistribute it and/or modify
