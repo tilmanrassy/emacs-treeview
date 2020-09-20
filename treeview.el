@@ -737,9 +737,8 @@ This is an auxiliary function used in `treeview-display-node'."
   (unless (treeview-node-folded-p node)
     (let ( (children (treeview-get-node-children node)) )
       (while children
-        (progn
-          (treeview-set-node-end-after-display (car children))
-          (setq children (cdr children))) ))))
+        (treeview-set-node-end-after-display (car children))
+        (setq children (cdr children)) ))))
 
 (defun treeview-display-node (node &optional append-newline-p)
   "Display NODE, i.e., render it in the current buffer.
@@ -814,9 +813,8 @@ return non-nil if the first argument is less that the second with respect to the
         (setq overlay-prop-keys (cdr overlay-prop-keys)) )))
   (let ( (children (treeview-get-node-children node)) )
     (while children
-      (progn
-        (treeview-recursively-remove-overlays (car children))
-        (setq children (cdr children)) ))) )
+      (treeview-recursively-remove-overlays (car children))
+      (setq children (cdr children)) )) )
 
 (defun treeview-undisplay-node (node &optional leave-no-gap)
   "Remove NODE and all its descendents from the display in the buffer.
@@ -891,9 +889,8 @@ If NODE is folded, does nothing."
     (funcall treeview-update-node-children-function node)
     (let ( (children (treeview-get-node-children node)) )
       (while children
-        (progn
-          (treeview-update-node (car children))
-          (setq children (cdr children))) )) ))
+        (treeview-update-node (car children))
+        (setq children (cdr children)) )) ))
 
 (defun treeview-toggle-node-state (node)
   "Unfolds NODE if it is folded, folds it if it is unfolded."
