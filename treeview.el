@@ -137,20 +137,6 @@
 
 ;;; Code:
 
-(intern "treeview")
-(intern "treeview-node")
-(intern "start")
-(intern "end")
-(intern "node-line-overlay")
-(intern "indent-overlay")
-(intern "control-overlay")
-(intern "icon-overlay")
-(intern "label-overlay")
-(intern "state")
-(intern "folded-unread")
-(intern "folded-read")
-(intern "expanded")
-
 (define-error 'treeview-error "Treeview error" 'error)
 (define-error 'treeview-invalid-node-state-error "Invalid node state" 'treeview-error)
 
