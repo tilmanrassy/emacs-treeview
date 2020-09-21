@@ -298,7 +298,7 @@ itself."
                   (insert " ")
                   (put-text-property start (point) 'display object))
               ;; It's a list of objects
-              (apply 'treeview-put object))
+              (apply #'treeview-put object))
           ;; It's a string or character
           (insert object) ))
       (setq objects (cdr objects)) )))
