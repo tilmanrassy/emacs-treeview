@@ -1,3 +1,5 @@
+[![MELPA](https://melpa.org/packages/treeview-badge.svg)](https://melpa.org/#/treeview)
+
 # emacs-treeview
 Abstract Emacs Lisp framework for tree navigation. Based on this framework, specific libraries for particular
 hierarchical data can be implemented, for example, file systems.
