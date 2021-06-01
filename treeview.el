@@ -312,15 +312,19 @@ Called with one argument, the node.  For example, if the nodes represent
 directories, this function could re-read the directory to update the children.
 The function should not redisplay the node, this is done automatically.")
 
+(make-variable-buffer-local 'treeview-update-node-children-function)
+
 (defvar treeview-after-node-expanded-function 'treeview-do-nothing
   "Function to perform additional actions after a node has been expanded.
 Called with one argument, the node.")
+
+(make-variable-buffer-local 'treeview-after-node-expanded-function)
 
 (defvar treeview-after-node-folded-function 'treeview-do-nothing
   "Function to perform additional actions after a node has been expanded.
 Called with one argument, the node.")
 
-(make-variable-buffer-local 'treeview-update-node-children-function)
+(make-variable-buffer-local 'treeview-after-node-folded-function)
 
 (defvar treeview-get-indent-function nil
   "Function to create the indentation before a node.
