@@ -37,12 +37,15 @@ where the elements have the following meaning:
 Node properties are implemented as plists with Lisp symbols as keys.  The following
 properties exist:
 
-  *  `:label-overlay`    &nbsp;&ndash;&nbsp; The overlay containing the node label
-  *  `:control-overlay`  &nbsp;&ndash;&nbsp; The overlay containing the node control
-  *  `:icon-overlay`     &nbsp;&ndash;&nbsp; The overlay containing the node icon
-  *  `:start`            &nbsp;&ndash;&nbsp; A marker at the position where the node begins
-  *  `:end`              &nbsp;&ndash;&nbsp; A marker at the position where the node ends
-  *  `:state`            &nbsp;&ndash;&nbsp; The state of the node.  See below for details
+  *  `node-line-overlay` &nbsp;&ndash;&nbsp; The overlay containing the node line
+  *  `indent-overlay`    &nbsp;&ndash;&nbsp; The overlay containing the node indentation
+  *  `label-overlay`     &nbsp;&ndash;&nbsp; The overlay containing the node label
+  *  `control-overlay`   &nbsp;&ndash;&nbsp; The overlay containing the node control
+  *  `icon-overlay`      &nbsp;&ndash;&nbsp; The overlay containing the node icon
+  *  `start`             &nbsp;&ndash;&nbsp; A marker at the position where the node begins
+  *  `end`               &nbsp;&ndash;&nbsp; A marker at the position where the node ends
+  *  `state`             &nbsp;&ndash;&nbsp; The state of the node.  See below for details
+  *  `selected`          &nbsp;&ndash;&nbsp; Whether the node is selected (non-nil if selected, nil if not)
 
 Node states: Each node is in exactly one of three states, which are represented by the
 following Lisp symbols:
@@ -60,7 +63,8 @@ The framework declares a couple of "abstract" functions in the sense of function
 variables whose values are function symbols. If the framework is applied for a particular purpose,
 specific implementations for these functions must be provided.  Here is a list of that function
 variables:
-
+  
+  *  treeview-get-root-node-function
   *  treeview-node-leaf-p-function
   *  treeview-update-node-children-function
   *  treeview-after-node-expanded-function
@@ -78,6 +82,8 @@ variables:
   *  treeview-get-indent-face-function
   *  treeview-get-control-face-function
   *  treeview-get-control-mouse-face-function
+  *  treeview-get-selected-node-face-function
+  *  treeview-get-highlighted-node-face-function
   *  treeview-get-label-keymap-function
   *  treeview-get-label-face-function
   *  treeview-get-label-mouse-face-function

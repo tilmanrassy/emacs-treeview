@@ -86,6 +86,9 @@
 ;;
 ;;   state  The state of the node.  See below for details
 ;;
+;;   selected
+;;          Whether the node is selected (non-nil if selected, nil if not)
+;;
 ;; Node states: Each node is in exactly one of three states, which are represented by the
 ;; following Lisp symbols:
 ;;
@@ -121,6 +124,8 @@
 ;;   treeview-get-indent-face-function
 ;;   treeview-get-control-face-function
 ;;   treeview-get-control-mouse-face-function
+;;   treeview-get-selected-node-face-function
+;;   treeview-get-highlighted-node-face-function
 ;;   treeview-get-label-keymap-function
 ;;   treeview-get-label-face-function
 ;;   treeview-get-label-mouse-face-function
@@ -464,8 +469,8 @@ The default implementation is `treeview-return-nil'.")
 
 (defvar treeview-get-selected-node-face-function 'treeview-return-nil
   "Function to get the face of selected nodes.
-Called with one argument, the node.  The return value must be a face or nil.  If a
-face, it is used to highlight selected nodes.
+Called with one argument, the node.  The return value must be a face or nil.
+If a face, it is used to highlight selected nodes.
 
 The default implementation is `treeview-return-nil'.")
 
@@ -478,8 +483,8 @@ The default implementation is `treeview-return-nil'.")
 
 (defvar treeview-get-highlighted-node-face-function 'treeview-return-nil
   "Function to get the face to highlighted a node.
-Called with one argument, the node.  The return value must be a face or nil.  If a
-face, it is used to highlight the node.
+Called with one argument, the node.  The return value must be a face or nil.
+If a face, it is used to highlight the node.
 
 The default implementation is `treeview-return-nil'.")
 
@@ -558,8 +563,10 @@ CALLBACK should be a function expecting a node as argument."
   (treeview-apply-recursively (treeview-get-root-node) callback))
 
 (defun treeview-filter-nodes (filter)
-  "Return a list of all nodes for which FILTER returns non-nil.
-FILTER must be function accepting a node as argument."
+  "Return a list of all nodes accepted by FILTER.
+FILTER must be function expecting a node as argument.  A node is said to be
+accepted by FILTER if FILTER returns a non-nil value when applied to the
+node."
   (let ( (nodes ()) )
     (treeview-for-each-node (lambda (node) (when (funcall filter node) (push node nodes))))
     nodes))
@@ -685,11 +692,11 @@ of the overlay, respectively (see overlay documentation in the Emacs Lisp refere
 
 (defun treeview-add-face (base-face face-to-add)
   "Add FACE-TO-ADD to BASE-FACE.
-This is an auxiliary function to create face lists for overlays.  BASE-FACE
-should be a face or a list of faces.  FACE-TO-ADD should be a face.  If
-BASE-FACE is a single face, the return value is the list (FACE-TO-ADD BASE-FACE).
-If BASE-FACE is a list of faces (FACE1 FACE2 ...), the return value is the list
-(FACE-TO-ADD FACE1 FACE2 ...)."
+This is an auxiliary function to create face lists for overlays.
+BASE-FACE should be a face or a list of faces.  FACE-TO-ADD should be a face.
+If BASE-FACE is a single face, the return value is the list
+\(FACE-TO-ADD BASE-FACE).  If BASE-FACE is a list of faces (FACE1 FACE2 ...),
+the return value is the list (FACE-TO-ADD FACE1 FACE2 ...)."
   (if (listp base-face)
       (unless (memq face-to-add base-face) (setq base-face (cons face-to-add base-face)))
     (unless (eq base-face face-to-add) (setq base-face (list face-to-add base-face))))
@@ -1186,6 +1193,9 @@ node is removed.  If the node isn't selected, does nothing"
   (dolist (node (treeview-get-all-selected-nodes)) (treeview-unselect-node node)))
 
 (defun treeview-unselect-all-nodes-after-keyboard-quit ()
+  "Unselect all nodes if `this-command' is `keyboard-quit'.
+If this function is added to `post-command-hook', the selections are revoked
+when \\<global-map> \\[keyboard-quit] is pressed."
   (when (eq this-command 'keyboard-quit) (treeview-unselect-all-nodes)))
 
 (defun treeview-toggle-select-node (node)
@@ -1218,7 +1228,7 @@ For example, if you have nodes
   NODE_3 *
   NODE_4
   NODE_5
-  NODE_6 
+  NODE_6
 
 which are all siblings of each other, and * denotes selection, and NODE is
 NODE_6, then the result is the following:
@@ -1246,7 +1256,7 @@ If there is no selected sibling above nOE, does nothing."
         (when nodes-to-select (dolist (elem nodes-to-select) (treeview-select-node elem))) )) ))
 
 (defun treeview-select-gap-above-node-at-point ()
-  "Select all nodes between the node at point and the nearest selected node above.
+  "Select all nodes from the node at point to the nearest selected node above.
 The node at point is also selected.
 See `treeview-select-gap-above-node' for more information."
   (interactive)
@@ -1254,7 +1264,7 @@ See `treeview-select-gap-above-node' for more information."
     (when node (treeview-select-gap-above-node node))))
 
 (defun treeview-select-gap-above-node-at-event (event)
-  "Select all nodes between the node at EVENT and the nearest selected node above.
+  "Select all nodes from the node at EVENT to the nearest selected node above.
 The node at EVENT is also selected.  EVENT should be a mouse event.
 See `treeview-select-gap-above-node' for more information."
   (interactive "@e")
@@ -1262,12 +1272,15 @@ See `treeview-select-gap-above-node' for more information."
     (when node (treeview-select-gap-above-node node))))
 
 (defun treeview-unhighlight-node ()
+  "Unhighlight the highlightwd node.
+If there is no highlightwd node, does nothing."
   (when treeview-highlighted-node
     (let ( (node treeview-highlighted-node) )
       (treeview-remove-node-label-face node (funcall treeview-get-highlighted-node-face-function node)))
     (setq treeview-highlighted-node nil)))
 
 (defun treeview-highlight-node (node)
+  "Highlight NODE."
   (treeview-unhighlight-node)
   (treeview-add-node-label-face node (funcall treeview-get-highlighted-node-face-function node))
   (setq treeview-highlighted-node node))
