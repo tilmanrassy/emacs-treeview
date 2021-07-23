@@ -140,6 +140,10 @@
 ;; created and rendered in the buffer by a call to treeview-display-node.
 ;;
 ;; See library "dir-treeview" for an example where this framework is used.
+;;
+;; If you upgrade from v1.0.0: Note that v1.1.0 (this version) defines another buffer-local
+;; function variable treeview-get-root-node-function which didn't exist in v1.0.0. It must be
+;; set to a function which returns the root node of the tree.
 
 ;;; Code:
 
@@ -639,7 +643,7 @@ node exists, return nil."
 (defun treeview-make-node-component-overlay (node content &optional keymap face mouse-face)
   "Create an overlay representing a specific component of a node.
 
-This function is used to create the imdemtation, control, icon, and label
+This function is used to create the indentation, control, icon, and label
 overlays of nodes.  NODE is the node to which the overlay belongs.  The
 `treeview-node' property of the overlay is set to NODE.  CONTENT is a string.
 It is inserted as the content of the overlay.  If non-nil, KEYMAP, FACE, and

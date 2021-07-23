@@ -1,6 +1,10 @@
-# emacs-treeview
+emacs-treeview
+==============
+
 Abstract Emacs Lisp framework for tree navigation. Based on this framework, specific libraries for particular
 hierarchical data can be implemented, for example, file systems.
+
+This document describes v1.1.0 of emacs-treeview. Consider [this notes](#updating-from-v100) for upgrading from v1.0.0. 
 
 A typical tree could look like the following:
 
@@ -92,7 +96,14 @@ variables:
   *  treeview-get-icon-mouse-face-function
   *  treeview-suggest-point-pos-in-control-function
 
-A description of each variable can be found in the repsetive documentation strings.  All
+A description of each variable can be found in the respective documentation strings.  All
 variables are buffer-local.  Libraries using this framework should create a new buffer and
 set the variables to particular functions in that buffer. Then, the root node should be
 created and rendered in the buffer by a call to treeview-display-node.
+
+
+### Updating from v1.0.0
+
+Note that v1.1.0 defines another buffer-local function variable
+`treeview-get-root-node-function` which didn't exist in v1.0.0. It must be set to a
+function which returns the root node of the tree.
