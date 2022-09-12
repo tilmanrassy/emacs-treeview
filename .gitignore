@@ -1,0 +1,3 @@
+*.elc
+/treeview-autoloads.el
+/treeview-pkg.el
