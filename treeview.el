@@ -42,11 +42,11 @@
 ;;   [+] Node 4
 ;;
 ;; Each node has a "label".  Non-leaf nodes also have a "control".  The label is the text by which
-;; the node is represented.  The control is a clickable piece of text  in front of the label which
+;; the node is represented.  The control is a clickable piece of text in front of the label which
 ;; allows the user to fold or unfold the node.  Nodes without children usually don't have a control.
-;; Nodes can also have an icon, but this is optional.  Icons are implemented as symbols in an icon
-;; font.  Control, icon, and label are always displayed in this order, and are always displayed in
-;; one line.  Thus, multi-line nodes are not supported by this library.
+;; Nodes can also have an icon, but this is optional.  Icons are implemented as images or symbols in
+;; an icon font.  Control, icon, and label are always displayed in this order, and are always
+;; displayed in one line.  Thus, multi-line nodes are not supported by this library.
 ;;
 ;; Nodes are represented by lists of the form:
 ;;
