@@ -141,9 +141,9 @@
 ;;
 ;; See library "dir-treeview" for an example where this framework is used.
 ;;
-;; If you upgrade from v1.0.0: Note that v1.1.0 (this version) defines another buffer-local
-;; function variable treeview-get-root-node-function which didn't exist in v1.0.0. It must be
-;; set to a function which returns the root node of the tree.
+;; If you upgrade from v1.0.0: Note that since v1.1.0 another buffer-local function variable
+;; treeview-get-root-node-function exists which didn't exist in v1.0.0. It must be set to a
+;; function which returns the root node of the tree.
 
 ;;; Code:
 
