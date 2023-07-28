@@ -1,10 +1,10 @@
 ;;; treeview.el --- A generic tree navigation library -*- lexical-binding: t -*-
 
-;; Copyright (C) 2018-2022 Tilman Rassy
+;; Copyright (C) 2018-2023 Tilman Rassy
 
 ;; Author: Tilman Rassy <tilman.rassy@googlemail.com>
 ;; URL: https://github.com/tilmanrassy/emacs-treeview
-;; Version: 1.1.1
+;; Version: 1.2.0
 ;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: lisp, tools, internal, convenience
 
@@ -508,7 +508,7 @@ The default implementation is `treeview-return-nil'.")
 (make-variable-buffer-local 'treeview-get-label-keymap-function)
 
 (defvar treeview-get-label-face-function 'treeview-return-nil
-  "Function to get the mouse face of the label of a node.
+  "Function to get the face of the label of a node.
 Called with one argument, the node.  The return value is passed as the
 MOUSE-FACE argument to `treeview-make-node-component-overlay'.  Thus, the
 return value must be a face or nil.
@@ -813,36 +813,36 @@ This is an auxiliary function used in `treeview-display-node'."
     (when indent
       (setq indent-overlay
             (treeview-make-node-component-overlay node indent nil indent-face)))
+    (treeview-set-node-prop node 'indent-overlay indent-overlay)
     ;; Control:
     (treeview-put control-margin-left)
     (when control-content
       (setq control-overlay
             (treeview-make-node-component-overlay node control-content control-keymap control-face control-mouse-face)))
     (treeview-put control-margin-right)
+    (treeview-set-node-prop node 'control-overlay control-overlay)
     ;; Icon:
     (treeview-put icon-margin-left)
     (when icon-content
       (setq icon-overlay
             (treeview-make-node-component-overlay node icon-content icon-keymap icon-face icon-mouse-face)))
     (treeview-put icon-margin-right)
+    (treeview-set-node-prop node 'icon-overlay icon-overlay)
     ;; Label:
     (treeview-put label-margin-left)
     (setq label-overlay
           (treeview-make-node-component-overlay node label-content label-keymap label-face label-mouse-face))
+    (treeview-set-node-prop node 'label-overlay label-overlay)
     ;; Node line:
     (setq node-line-overlay (treeview-make-node-line-overlay node start (point)))
+    (treeview-set-node-prop node 'node-line-overlay node-line-overlay)
     (unless (treeview-node-folded-p node)
       (let ( (children (treeview-get-node-children node)) )
         (if children (newline))
         (while children
           (treeview-render-node (car children) (setq children (cdr children)))) ))
     (treeview-set-node-end node nil nil)
-    (if append-newline-p (newline))
-    (treeview-set-node-prop node 'indent-overlay indent-overlay)
-    (treeview-set-node-prop node 'control-overlay control-overlay)
-    (treeview-set-node-prop node 'icon-overlay icon-overlay)
-    (treeview-set-node-prop node 'label-overlay label-overlay)
-    (treeview-set-node-prop node 'node-line-overlay node-line-overlay) ) )
+    (if append-newline-p (newline))) )
 
 (defun treeview-set-node-end-after-display (node)
   "Set the insertion type of the end marker of NODE and its descendants to t.
@@ -1053,6 +1053,23 @@ ACTION-FUNCTION is the symbol of the function.  If there is no node at point,
 does nothing."
   (let ( (node (treeview-get-node-at-pos (point))) )
     (when node (funcall action-function node))))
+
+(defun treeview-highlight-node-at-point-and-call (action-function)
+  "Highlight node at point and call ACTION-FUNCTION for it.
+
+ACTION-FUNCTION should be the symbol of the function.  It is called with one
+argument, the node at point.  Before ACTION-FUNCTION is invoked, the node is
+highlighted be means of `treeview-highlight-node'.  After ACTION-FUNCTION
+returns, the node is un-highlighted be means of `treeview-unhighlight-node'.
+
+If there is no node at point, does nothing.
+
+Except highlighting, this is the same as `treeview-call-for-node-at-point'."
+  (let ( (node (treeview-get-node-at-pos (point))) )
+    (when node
+      (treeview-highlight-node node)
+      (funcall action-function node)
+      (treeview-unhighlight-node) )))
 
 (defun treeview-refresh-node (node)
   "Update and redisplay NODE.
