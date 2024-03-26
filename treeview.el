@@ -4,7 +4,7 @@
 
 ;; Author: Tilman Rassy <tilman.rassy@googlemail.com>
 ;; URL: https://github.com/tilmanrassy/emacs-treeview
-;; Version: 1.2.0
+;; Version: 1.2.1
 ;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: lisp, tools, internal, convenience
 
@@ -1134,9 +1134,10 @@ argument.  Otherwise, point is placed at the beginning of the label."
   "Move point one line down,
 and, if there is a node in that line, move point to the node."
   (interactive)
-  (forward-line)
-  (let ( (node (treeview-get-node-at-point)) )
-    (if node (treeview-place-point-in-node node))))
+  (unless (equal (pos-eol) (point-max)) ;; If in the last line, do nothing
+    (forward-line)
+    (let ( (node (treeview-get-node-at-point)) )
+      (if node (treeview-place-point-in-node node)))))
 
 (defun treeview-previous-line ()
   "Move point one line up,
