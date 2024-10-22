@@ -1,6 +1,6 @@
 ;;; treeview.el --- A generic tree navigation library -*- lexical-binding: t -*-
 
-;; Copyright (C) 2018-2023 Tilman Rassy
+;; Copyright (C) 2018-2024 Tilman Rassy
 
 ;; Author: Tilman Rassy <tilman.rassy@googlemail.com>
 ;; URL: https://github.com/tilmanrassy/emacs-treeview
@@ -1047,29 +1047,83 @@ See also `treeview-toggle-node-state'."
           (offset (/ (- end start) 2)) )
     (+ start offset)))
 
-(defun treeview-call-for-node-at-point (action-function)
-  "Call ACTION-FUNCTION with the node at point as argument.
-ACTION-FUNCTION is the symbol of the function.  If there is no node at point,
-does nothing."
+(defun treeview-call-for-node (node action &optional highlight retain-point)
+  "Call ACTION for NODE, optionally highlight node and retain point.
+
+ACTION should be the symbol of a function.  ACTION is called with one argument,
+the node at point. If HIGHLIGHT is non-nil, the node is highlighted before ACTION
+is invoked, and unhighlighted after ACTION has returned.  If RETAIN-POINT is
+non-nil, the initial integer position of the point is saved and restored after
+everything else has been done."
+  (let ( (saved-point (point)) )
+    (if (or highlight retain-point)
+        (progn
+          (when highlight (treeview-highlight-node node))
+          (unwind-protect
+              (funcall action node)
+            (when highlight (treeview-unhighlight-node))
+            (when retain-point (goto-char saved-point))) )
+      (funcall action node)) ))
+
+(defun treeview-call-for-node-at-point (action &optional highlight retain-point)
+  "Call ACTION for the node at point, optionally highlight node and retain point.
+
+ACTION should be the symbol of a function.  ACTION is called with one argument,
+the node at point. If HIGHLIGHT is non-nil, the node is highlighted before ACTION
+is invoked, and unhighlighted after ACTION has returned.  If RETAIN-POINT is
+non-nil, the initial integer position of the point is saved and restored after
+everything else has been done.
+
+If there is no node at point, does nothing."
   (let ( (node (treeview-get-node-at-pos (point))) )
-    (when node (funcall action-function node))))
+    (when node (treeview-call-for-node node action highlight retain-point))))
 
-(defun treeview-highlight-node-at-point-and-call (action-function)
-  "Highlight node at point and call ACTION-FUNCTION for it.
+;; (defun treeview-call-for-node-at-point (action-function)
+;;   "Call ACTION-FUNCTION with the node at point as argument.
+;; ACTION-FUNCTION is the symbol of the function.  If there is no node at point,
+;; does nothing."
+;;   (let ( (node (treeview-get-node-at-pos (point))) )
+;;     (when node (funcall action-function node))))
 
-ACTION-FUNCTION should be the symbol of the function.  It is called with one
-argument, the node at point.  Before ACTION-FUNCTION is invoked, the node is
-highlighted be means of `treeview-highlight-node'.  After ACTION-FUNCTION
-returns, the node is un-highlighted be means of `treeview-unhighlight-node'.
+;; (defun treeview-highlight-node-and-call (node action-function)
+;;   "Highlight NODE and call ACTION-FUNCTION for it.
 
-If there is no node at point, does nothing.
+;; ACTION-FUNCTION should be the symbol of the function.  It is called with one
+;; argument, the node NODE.  Before ACTION-FUNCTION is invoked, the node is
+;; highlighted be means of `treeview-highlight-node'.  After ACTION-FUNCTION
+;; returns, the node is un-highlighted be means of `treeview-unhighlight-node'."
+;;   (treeview-highlight-node node)
+;;   (unwind-protect
+;;       (funcall action-function node)
+;;     (treeview-unhighlight-node)) )
 
-Except highlighting, this is the same as `treeview-call-for-node-at-point'."
-  (let ( (node (treeview-get-node-at-pos (point))) )
-    (when node
-      (treeview-highlight-node node)
-      (funcall action-function node)
-      (treeview-unhighlight-node) )))
+;; (defun treeview-highlight-node-at-point-and-call (action-function)
+;;   "Highlight node at point and call ACTION-FUNCTION for it.
+
+;; ACTION-FUNCTION should be the symbol of the function.  It is called with one
+;; argument, the node at point.  Before ACTION-FUNCTION is invoked, the node is
+;; highlighted be means of `treeview-highlight-node'.  After ACTION-FUNCTION
+;; returns, the node is un-highlighted be means of `treeview-unhighlight-node'.
+
+;; If there is no node at point, does nothing.
+
+;; Except highlighting, this is the same as `treeview-call-for-node-at-point'."
+;;   (let ( (node (treeview-get-node-at-pos (point))) )
+;;     (when node (treeview-highlight-node-and-call node action-function) )))
+
+;; (defun treeview-highlight-node-at-point-and-call-and-retain-point (action-function)
+;;   "Highlight node at point, call ACTION-FUNCTION for it, and retain point.
+
+;; Same as `treeview-highlight-node-at-point-and-call', but in addition, the point
+;; is preserved.  To be exact, the integer position of the point after execution
+;; is the same as before execution."
+;;   (let ( (node (treeview-get-node-at-pos (point))) (saved-point (point)) )
+;;     (when node
+;;       (treeview-highlight-node node)
+;;       (unwind-protect
+;;           (funcall action-function node)
+;;         (treeview-unhighlight-node)
+;;         (goto-char saved-point)) )))
 
 (defun treeview-refresh-node (node)
   "Update and redisplay NODE.
@@ -1185,6 +1239,11 @@ has no next sibling, does nothing."
         (when parent
           (let ( (sibling (treeview-get-next-sibling parent)) )
             (when sibling (treeview-place-point-in-node sibling))))))))
+
+(defun treeview-goto-root ()
+  "Move the point to the root node."
+  (interactive)
+  (treeview-place-point-in-node (treeview-get-root-node)))
 
 (defun treeview-node-selected-p (node)
   "Return non-nil if NODE is selected, otherwise nil.
