@@ -4,8 +4,8 @@
 
 ;; Author: Tilman Rassy <tilman.rassy@googlemail.com>
 ;; URL: https://github.com/tilmanrassy/emacs-treeview
-;; Version: 1.2.1
-;; Package-Requires: ((emacs "24.4"))
+;; Version: 1.3.0
+;; Package-Requires: ((emacs "29.1"))
 ;; Keywords: lisp, tools, internal, convenience
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -260,8 +260,8 @@ If NODE does not have a next sibling, returns nil."
           (eq last-parent-child node)))))
 
 (defun treeview-parent-is-last-child-p (node)
-  "Return non-nil if the parent of NODE is the last child of its parent,
-otherwise nil."
+  "Return non-nil if the parent of NODE is the last child of its parent.
+Otherwise, return nil."
   (let ( (parent (treeview-get-node-parent node)) )
     (if parent (treeview-last-child-p parent) t)))
 
@@ -579,8 +579,8 @@ node."
     nodes))
 
 (defun treeview-get-node-at-pos (pos)
-  "Return the node at the buffer position POS,
-or nil if there is no node at that position."
+  "Return the node at the buffer position POS.
+If there is no node at that position, return nil."
   (let ( (overlays (overlays-at pos t))
          (node nil) )
     (while (and overlays (not node))
@@ -1051,10 +1051,10 @@ See also `treeview-toggle-node-state'."
   "Call ACTION for NODE, optionally highlight node and retain point.
 
 ACTION should be the symbol of a function.  ACTION is called with one argument,
-the node at point. If HIGHLIGHT is non-nil, the node is highlighted before ACTION
-is invoked, and unhighlighted after ACTION has returned.  If RETAIN-POINT is
-non-nil, the initial integer position of the point is saved and restored after
-everything else has been done."
+the node at point.  If HIGHLIGHT is non-nil, the node is highlighted before
+ACTION is invoked, and unhighlighted after ACTION has returned.  If RETAIN-POINT
+is non-nil, the initial integer position of the point is saved and restored
+after everything else has been done."
   (let ( (saved-point (point)) )
     (if (or highlight retain-point)
         (progn
@@ -1069,10 +1069,10 @@ everything else has been done."
   "Call ACTION for the node at point, optionally highlight node and retain point.
 
 ACTION should be the symbol of a function.  ACTION is called with one argument,
-the node at point. If HIGHLIGHT is non-nil, the node is highlighted before ACTION
-is invoked, and unhighlighted after ACTION has returned.  If RETAIN-POINT is
-non-nil, the initial integer position of the point is saved and restored after
-everything else has been done.
+the node at point.  If HIGHLIGHT is non-nil, the node is highlighted before
+ACTION is invoked, and unhighlighted after ACTION has returned.  If RETAIN-POINT
+is non-nil, the initial integer position of the point is saved and restored
+after everything else has been done.
 
 If there is no node at point, does nothing."
   (let ( (node (treeview-get-node-at-pos (point))) )
@@ -1185,8 +1185,8 @@ argument.  Otherwise, point is placed at the beginning of the label."
     (overlay-start (treeview-get-node-prop node 'label-overlay)))))
 
 (defun treeview-next-line ()
-  "Move point one line down,
-and, if there is a node in that line, move point to the node."
+  "Move point one line down, and, if there is a node in that line, to the node.
+If the point is in the last line, do nothing."
   (interactive)
   (unless (equal (pos-eol) (point-max)) ;; If in the last line, do nothing
     (forward-line)
@@ -1194,16 +1194,15 @@ and, if there is a node in that line, move point to the node."
       (if node (treeview-place-point-in-node node)))))
 
 (defun treeview-previous-line ()
-  "Move point one line up,
-and, if there is a node in that line, move point to the node."
+  "Move point one line up, and, if there is a node in that line, to the node.
+If the point is in the first line, do nothing."
   (interactive)
   (forward-line -1)
   (let ( (node (treeview-get-node-at-point)) )
     (if node (treeview-place-point-in-node node))))
 
 (defun treeview-goto-parent ()
-  "Move the point to the parent of node at point.
-If there is no node at point, or if the node has no parent, does nothing."
+  "Move the point to the parent of node at point."
   (interactive)
   (let ( (node (treeview-find-node-in-current-line)) )
     (when node
