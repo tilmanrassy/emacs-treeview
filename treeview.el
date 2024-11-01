@@ -4,8 +4,8 @@
 
 ;; Author: Tilman Rassy <tilman.rassy@googlemail.com>
 ;; URL: https://github.com/tilmanrassy/emacs-treeview
-;; Version: 1.3.0
-;; Package-Requires: ((emacs "29.1"))
+;; Version: 1.3.1
+;; Package-Requires: ((emacs "25.1"))
 ;; Keywords: lisp, tools, internal, convenience
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -1188,7 +1188,7 @@ argument.  Otherwise, point is placed at the beginning of the label."
   "Move point one line down, and, if there is a node in that line, to the node.
 If the point is in the last line, do nothing."
   (interactive)
-  (unless (equal (pos-eol) (point-max)) ;; If in the last line, do nothing
+  (unless (equal (line-end-position) (point-max)) ;; If in the last line, do nothing
     (forward-line)
     (let ( (node (treeview-get-node-at-point)) )
       (if node (treeview-place-point-in-node node)))))
